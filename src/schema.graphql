@@ -1,0 +1,132 @@
+type Query {
+    users(query: String): [User!]!
+    posts(query: String): [Post!]!
+    comments: [Comment!]!
+    me: User!
+    post: Post!
+}
+
+type Mutation {
+    createUser(data: createUserInput!): User!
+    deleteUser(id: ID!): User!
+    # updateUserInput must not mandatory!!!
+    updateUser(id: ID!, data: updateUserInput ): User!
+    createPost(data: createPostInput!): Post!
+    deletePost(id: ID!): Post!
+    updatePost(id: ID!, data: updatePostInput): Post!
+    createComment(data: createCommentInput!): Comment!
+    deleteComment(id: ID!): Comment!
+    updateComment(id: ID!, data: updateCommentInput): Comment!
+}
+
+#  IMPORTANT!!!
+#  Subscriptions resolvers are not a function, but "an object" with subscribe method, that returns AsyncIterable.
+#  So "count" or any other key value must be placed
+type Subscription {
+    # count: Int!
+    # Comment! as the value comes back
+    # The way of arguments are identical with query and mutation.
+    # postId: PostId is required to notify new comments to the specific post
+    #       Remember that when we create a comment, we did not put postId
+    #       because we put the post ID manually in the array in db file.
+    # comment(postId: ID! ): Comment!
+    comment(postId: ID!): CommentSubscriptionPayload!
+    
+    # Challenge!!!
+    # 1)
+    # post: Post!
+
+    # 2) Real World
+    # Do not need to make another resover for this
+    #   becauee the first field, "mutation" is a scalar type return
+    #   and the second field "data" is defined aready
+    post: PostSubscriptionPayload!
+}
+
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    posts: [Post!]!
+    comments: [Comment!]!
+}
+
+type Post {
+    id: ID!
+    title: String!
+    body: String!
+    published: Boolean
+    author: User!
+    comments: [Comment!]!
+}
+
+type Comment {
+    id: ID!
+    text: String!
+    author: User!
+    post: Post!
+}
+
+input createUserInput {
+    name: String!
+    email: String!
+    age: Int
+}
+
+# updateUserInput : it is update. Therefore, we can't add mandatory exclamantation!!!
+input updateUserInput {
+    name: String
+    email: String
+    age: Int
+}
+
+input createPostInput {
+    title: String!
+    body: String!
+    published: Boolean
+    author: ID!
+}
+
+input updatePostInput {
+    title: String
+    body: String
+    published: Boolean
+    author: ID!
+}
+
+input createCommentInput {
+    text: String!
+    post: ID!
+    author: ID!
+}
+
+input updateCommentInput {
+    text: String
+    author: ID!
+    post: ID!
+}
+
+# ENUM : We can use the one of three String types
+enum MutationType {
+    CREATED
+    UPDATED
+    DELETED    
+}
+
+type PostSubscriptionPayload {
+    # mutatoin: Sting! => a mutation name
+    
+    # 1)
+    # mutation: String!
+
+    # 2) Instead of String!
+    mutation: MutationType!
+    data: Post!
+}
+
+# Challenge
+type CommentSubscriptionPayload {
+    # mutation: String!
+    mutation: MutationType!
+    data: Comment!
+}
