@@ -95,9 +95,10 @@ const Mutation = {
 
      },
      createPost(parent, { data: { title, body, published, author }}, { db: { users, posts }, pubsub }, info) {
+
          const userVerified = users.some(user => user.id === author);
          if(!userVerified) throw new Error('User is required to signup');
-
+        prisma.mutation.createPost()
          const post = {
              id: uuidv4(),
              title,

@@ -1,5 +1,5 @@
 const Query = {
-    users(parent,{ query }, { db, prisma }, info) {
+    users(parent, args, { db, prisma }, info) {
         // 1) When the second arg is nothing
         // prisma will grap default data
         //  showing all fields.
@@ -9,12 +9,20 @@ const Query = {
         // prisma.query.users(null);
 
         // 2) When the second arg is object 
-        // it receives "info"arguement of resolver
+        // it receives "info" arguement of resolver
         // "info" contains the original operation which exists in iOS / web browser
-        // including for instance screen sizes or web browser types
+        //      most inportantly it contails all of types, queries and mutations info
         
-        console.log('info ========> ', )
-        return prisma.query.users(null, info)
+        
+         console.log('info ========> ', info )
+         return prisma.query.users(null, info)
+        // return prisma.query.users(null, info)
+        //     .then(users => {
+        //         console.log('users: ', JSON.stringify(users, undefined, 4))
+        //         return users
+        //     })
+
+        // return prisma.query.users(null, '{ id name email }')
         
         // if(!query) return users;
 
@@ -22,15 +30,19 @@ const Query = {
         //     user.name.toLowerCase().includes(query.toLowerCase()));
 
     },
-    posts(parent, { query }, { db: { posts }}, info) {
-        if(!query) return posts;
+    posts(parent, args, { prisma }, info) {
+        return prisma.query.posts(null, info);
+        // if(!query) return posts;
         
-        return posts.filter(post => {
-            const isTitleMatched = post.title.toLowerCase().includes(query.toLowerCase());
-            const isBodyMatched = post.body.toLowerCase().includes(query.toLowerCase());
-            return isTitleMatched || isBodyMatched;
-        });
+        // return posts.filter(post => {
+        //     const isTitleMatched = post.title.toLowerCase().includes(query.toLowerCase());
+        //     const isBodyMatched = post.body.toLowerCase().includes(query.toLowerCase());
+        //     return isTitleMatched || isBodyMatched;
+        // });
     },
+
+
+
     comments(parent, args, { db: { comments }}, info) {
         return comments;
     },
