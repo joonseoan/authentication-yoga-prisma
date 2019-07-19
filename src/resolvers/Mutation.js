@@ -22,7 +22,6 @@ import uuidv4 from 'uuid/v4';
 
 */
 
-
 const Mutation = {
     createUser(parent, { data: { name, email, age }}, { db: { users }}, info) {
          const emailTaken = users.some(user => user.email === email);

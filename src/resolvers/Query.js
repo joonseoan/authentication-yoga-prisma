@@ -1,5 +1,7 @@
 const Query = {
-    users(parent, args, { db, prisma }, info) {
+    users(parent, { query }, { prisma }, info) {
+
+        // [ definition of prisma query and its args ]
         // 1) When the second arg is nothing
         // prisma will grap default data
         //  showing all fields.
@@ -13,15 +15,55 @@ const Query = {
         // "info" contains the original operation which exists in iOS / web browser
         //      most inportantly it contails all of types, queries and mutations info
         
-        
-         console.log('info ========> ', info )
-         return prisma.query.users(null, info)
+
+        // info: 
+        console.log(JSON.stringify(info, undefined, 4))
+
+        //2) with args
+        const opArgs = {};
+        // if we want to use the query as "name"
+        if(query) {
+            opArgs.where = {
+
+                // 3)
+                // AND: we can query data by using a string and a group of letters or characters
+                // Two conditions down below must be satisfied.
+                AND: [{
+                    name_contains: query
+                }, {
+                    email_contains: query
+                }]                 
+                
+                // 2)
+                // OR: either of one.
+                // AND: we can query data by using a string and a group of letters or characters
+                //      letters or character in an argument   
+                // Must use array
+                // OR: [{
+                //     name_contains: query
+                // }, {
+                //     email_contains: query
+                // }]
+
+                // 1)
+                // define if a particular name's string/letter exists
+                // name_contains: query
+            }
+        }
+
+        return prisma.query.users(opArgs, info);
+
+        // 1) prisma query without args
+        //  console.log('info ========> ', info )
+        //  return prisma.query.users(null, info)
         // return prisma.query.users(null, info)
         //     .then(users => {
         //         console.log('users: ', JSON.stringify(users, undefined, 4))
         //         return users
         //     })
+        
 
+        // When only uses "yoga"
         // return prisma.query.users(null, '{ id name email }')
         
         // if(!query) return users;
@@ -30,8 +72,31 @@ const Query = {
         //     user.name.toLowerCase().includes(query.toLowerCase()));
 
     },
-    posts(parent, args, { prisma }, info) {
-        return prisma.query.posts(null, info);
+    posts(parent, { query }, { prisma }, info) {
+
+        // With the first arg
+        const opArgs = {};
+        if(query) {
+            opArgs.where = {
+                AND: [{
+                    published: false
+                }, {
+                    author: {
+                        name_contains: query
+                    }
+                }]
+            }
+        }
+
+        return prisma.query.posts(opArgs, info);
+
+        
+        // 1) Without the first arg
+        // return prisma.query.posts(null, info);
+
+        
+
+        // Without prisma
         // if(!query) return posts;
         
         // return posts.filter(post => {
@@ -40,11 +105,15 @@ const Query = {
         //     return isTitleMatched || isBodyMatched;
         // });
     },
+    comments(parent, args, { prisma }, info) {
 
+        const opArgs = {};
 
+        
 
-    comments(parent, args, { db: { comments }}, info) {
-        return comments;
+        return prisma.query.comments(opArgs, info);
+
+        // return comments;
     },
     me(parent, args, ctx, info) {
         return {
