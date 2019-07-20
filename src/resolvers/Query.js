@@ -114,23 +114,23 @@ const Query = {
         return prisma.query.comments(opArgs, info);
 
         // return comments;
-    },
-    me(parent, args, ctx, info) {
-        return {
-            id: 'ttt',
-            name: 'Alex',
-            email: 'alex@example.com',
-            age: 23
-        }
-    },
-    post(parent, args, ctx, info) {
-        return {
-            id: 'aaa',
-            title: 'Awesome you',
-            body: 'hahahaha',
-            published: false
-        }
     }
+    // me(parent, args, ctx, info) {
+    //     return {
+    //         id: 'ttt',
+    //         name: 'Alex',
+    //         email: 'alex@example.com',
+    //         age: 23
+    //     }
+    // },
+    // post(parent, args, ctx, info) {
+    //     return {
+    //         id: 'aaa',
+    //         title: 'Awesome you',
+    //         body: 'hahahaha',
+    //         published: false
+    //     }
+    // }
 }
 
 export { Query };

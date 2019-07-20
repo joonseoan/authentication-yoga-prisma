@@ -70,14 +70,12 @@ type Comment {
 input createUserInput {
     name: String!
     email: String!
-    age: Int
 }
 
 # updateUserInput : it is update. Therefore, we can't add mandatory exclamantation!!!
 input updateUserInput {
     name: String
     email: String
-    age: Int
 }
 
 input createPostInput {

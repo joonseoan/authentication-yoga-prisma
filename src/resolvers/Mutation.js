@@ -1,121 +1,144 @@
 import uuidv4 from 'uuid/v4'; 
 
-/* 
-    [ENUM]
-    1. A special type that defines a set of constants.
-    2. This type can then be used as the type for a field (similar to scalar adn custom object types)
-    3. Values for the field must be one of the constants for the type
-
-    // userRole - standard, editor, admin
-
-    // type User {
-    //     role: userRole!
-    // }
-
-    // Enum can be mainly used to replace Boolean.
-    // For instance, intead of "true" or "false" which is the one of both
-    //  Enum is able to expand "cases", for instance, in Laptop's power status.
-    //  The laptop has on, off, and sleep modes which are three states.
-    // Let's use ENUM to represent "CREATE", "UPDATE", and "DELETE" in subscription.
-    // Go to mutation's Subscription type of the Schema file.
-
-
-*/
-
 const Mutation = {
-    createUser(parent, { data: { name, email, age }}, { db: { users }}, info) {
-         const emailTaken = users.some(user => user.email === email);
-         if(emailTaken) throw new Error('Email is already taken');
+    async createUser(parent, { data }, { prisma }, info) {
+       
+        // exists.User from "users" array
+        const emailTaken = await prisma.exists.User({ email: data.email });
+
+        if(emailTaken) throw new Error('Email is already taken');
+
+        // must follow node schema!
+        return await prisma.mutation.createUser({ data }, info);
+
+        // Without prisma
+        //  const emailTaken = users.some(user => user.email === email);
+        //  if(emailTaken) throw new Error('Email is already taken');
          
-         const user = {
-             id: uuidv4(),
-             name,
-             email,
-             age
-         }
+        //  const user = {
+        //      id: uuidv4(),
+        //      name,
+        //      email,
+        //      age
+        //  }
 
-         users.push(user);
-         return user;
+        //  users.push(user);
+        //  return user;
 
      },
-     updateUser(parent, { id, data: { name, email, age }}, { db: { users }}, info) {
-        const user = users.find(user => user.id === id);
-        if(!user) throw new Error('Unable to find the user');
+     async updateUser(parent, { id, data }, { prisma }, info) {
+        const userExist = await prisma.exists.User({ id });
+        if(!userExist) throw new Error('The does not exist.');
         
-        if(typeof name === 'string') {
-            user.name = name;
-        }
+        return await prisma.mutation.updateUser({
+            where: { id },
+            data
+        }, info);
         
-        if(typeof email === 'string') {
-            const isEmailExisting = users.some(user => user.email === email);
-            if(isEmailExisting) throw new Error('The email already exists.');
-            user.email = email;
-        }
+        // const user = users.find(user => user.id === id);
+        // if(!user) throw new Error('Unable to find the user');
+        
+        // if(typeof name === 'string') {
+        //     user.name = name;
+        // }
+        
+        // if(typeof email === 'string') {
+        //     const isEmailExisting = users.some(user => user.email === email);
+        //     if(isEmailExisting) throw new Error('The email already exists.');
+        //     user.email = email;
+        // }
 
-        if(typeof age !== 'undefined') {
-            console.log(typeof age)
-            if(typeof age === 'number') {
-                user.age = age;
-            } else {
-                throw new Error('Invalid Input')
-            }
-        } 
-        return user;
+        // if(typeof age !== 'undefined') {
+            
+        //     if(typeof age === 'number') {
+        //         user.age = age;
+        //     } else {
+        //         throw new Error('Invalid Input')
+        //     }
+        // } 
+        // return user;
      },
-     deleteUser(parent, { id }, { db: { users, posts, comments }}, info) {
-        const userIndex = users.findIndex(user => user.id === id );
-        if(userIndex === -1) {
-            throw new Error('Unable to find the user');   
-        }
+     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!  IMPORTANT !!!!!!!!!!!!!!!!!!!!1
+     // client: must use node resolver's format with arg
+     // prisma: must use prisma's schema format with args
+     async deleteUser(parent, { id }, { prisma }, info) {
+        
+        const userExist = await prisma.exists.User({ id });
+        if(!userExist) throw new Error ('The ID does not exist.');
+
+        // prsma's "relation of CASCASDE and SET_NULL" automatically resolve 
+        //  association issue.
+        return await prisma.mutation.deleteUser({ where: { id }}, info);
+        
+        // Without prisma
+        // const userIndex = users.findIndex(user => user.id === id );
+        // if(userIndex === -1) {
+        //     throw new Error('Unable to find the user');   
+        // }
         
        
-        posts = posts.filter(post => {
+        // posts = posts.filter(post => {
 
-            // In order to remove comment's post before the post is deleted
-            const match = post.author === id;
+        //     // In order to remove comment's post before the post is deleted
+        //     const match = post.author === id;
 
-            // remove the post first in the comment
-            if(match) {
-                comments = comments.filter(comment => comment.post !== post.id)
-            }
-            // Important !!!!!
-            // return the array in the condition that they are not matched
+        //     // remove the post first in the comment
+        //     if(match) {
+        //         comments = comments.filter(comment => comment.post !== post.id)
+        //     }
+        //     // Important !!!!!
+        //     // return the array in the condition that they are not matched
 
-            // Then remove the post first
-            return !match;
-        })
+        //     // Then remove the post first
+        //     return !match;
+        // })
 
-        // remove the comment
-        comments = comments.filter(comment => comment.author !== id);
+        // // remove the comment
+        // comments = comments.filter(comment => comment.author !== id);
 
-        const deletedUsers =  users.splice(userIndex, 1);
+        // const deletedUsers =  users.splice(userIndex, 1);
 
-        return deletedUsers[0];
+        // return deletedUsers[0];
 
      },
-     createPost(parent, { data: { title, body, published, author }}, { db: { users, posts }, pubsub }, info) {
+     async createPost(parent, { data: { title, body, published, author } }, { prisma, pubsub }, info) {
+        const userVerified = await prisma.exists.User({ id: author });
+        if(!userVerified) throw new Error('Unable to find the user.');
+        
+        return await prisma.mutation.createPost({
+            data: {
+                title,
+                body,
+                published,
+                author: {
+                    connect: {
+                        id: author
+                    }
+                }
+            }
+        }, info);
 
-         const userVerified = users.some(user => user.id === author);
-         if(!userVerified) throw new Error('User is required to signup');
-        prisma.mutation.createPost()
-         const post = {
-             id: uuidv4(),
-             title,
-             body,
-             published,
-             author
-         }
+        //  const userVerified = users.some(user => user.id === author);
+        // if(!userVerified) throw new Error('User is required to signup');
+        // prisma.mutation.createPost()
+        //  const post = {
+        //      id: uuidv4(),
+        //      title,
+        //      body,
+        //      published,
+        //      author
+        //  }
 
-         posts.push(post);
-         if(published) pubsub.publish('post', { 
-             // mapping it over the return type of Schema
-             post: {
-                 mutation: 'CREATED',
-                 data: post
-             } 
-            });
+        //  posts.push(post);
+        //  if(published) pubsub.publish('post', { 
+        //      // mapping it over the return type of Schema
+        //      post: {
+        //          mutation: 'CREATED',
+        //          data: post
+        //      } 
+        //     });
          
-         return post;
+        //  return post;
      },
      updatePost(parent, { id, data: { title, body, published, author }}, { db: { users, posts }, pubsub }, info) {
          const userVerified = users.some(user => user.id === author)
