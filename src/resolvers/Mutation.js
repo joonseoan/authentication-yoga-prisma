@@ -140,81 +140,125 @@ const Mutation = {
          
         //  return post;
      },
-     updatePost(parent, { id, data: { title, body, published, author }}, { db: { users, posts }, pubsub }, info) {
-         const userVerified = users.some(user => user.id === author)
-         if(!userVerified) throw new Error('Unable to find the user');
+     async updatePost(parent, { id, data: { title, body, published, author }}, { prisma, pubsub }, info) {
+         
+         // const userVerified = users.some(user => user.id === author)
+         // if(!userVerified) throw new Error('Unable to find the user');
 
-         const post = posts.find(post => post.id === id);
-         const originalPost = { ...post };
+        const userExist = await prisma.exists.User({ id : author });
+        if(!userExist) throw new Error('Unable to find the user');
 
-         if(!post) throw new Error('Unable to find the post');
+        const post = await prisma.query.posts({
+            where: {
+                AND: [{
+                    id_contains: id
+                }, { 
+                    author: {
+                        id_contains: author
+                    }
+                }]
+            }
+        }, info);
 
-         if(typeof title === 'string') {
-            post.title = title;
-         }
+        console.log('post ===> ', post)
 
-         if(typeof body === 'string') {
-             post.body = body;
-         }
+        if(!post) throw new Error('Unable to find your post');
+
+        return await prisma.mutation.updatePost({
+            where: { id },
+            data: {
+                title,
+                body,
+                published,
+                author: {
+                    connect: {
+                        id: author
+                    }
+                }
+            }
+        }, info);
+
+
+        //  const post = posts.find(post => post.id === id);
+        //  const originalPost = { ...post };
+
+        //  if(!post) throw new Error('Unable to find the post');
+
+        //  if(typeof title === 'string') {
+        //     post.title = title;
+        //  }
+
+        //  if(typeof body === 'string') {
+        //      post.body = body;
+        //  }
 
          // newly updating "published" field from the client 
-         if(typeof published !== 'undefined' && typeof published === 'boolean') {
+        //  if(typeof published !== 'undefined' && typeof published === 'boolean') {
             
-             console.log('boolean')
-             post.published = published;
+        //      console.log('boolean')
+        //      post.published = published;
 
-             // post.published => new post by up and above "post.published = published;
-             if(originalPost.published && !post.published) {
-                 // deleted;
-                 console.log('deleted')
-                 pubsub.publish('post', { post: {
-                     mutation: 'DELETED',
-                     data: originalPost
-                 }});
+        //      // post.published => new post by up and above "post.published = published;
+        //      if(originalPost.published && !post.published) {
+        //          // deleted;
+        //          console.log('deleted')
+        //          pubsub.publish('post', { post: {
+        //              mutation: 'DELETED',
+        //              data: originalPost
+        //          }});
 
-             } else if(!originalPost.published && post.published) {
-                 // created
-                 console.log('created')
-                 pubsub.publish('post', { post: {
-                     mutation: 'CREATED',
-                     data: post
-                 }});
-             }
-         // in case of update, we must not put "published value"
-         // the original / exsiting post.published
-         } else if(post.published) {
-             console.log('published === undefined', published)
-            // updated
-            console.log('updated')
-            pubsub.publish('post', { post: {
-                mutation: 'UPDATED',
-                data: post
-            }});
-         }
+        //      } else if(!originalPost.published && post.published) {
+        //          // created
+        //          console.log('created')
+        //          pubsub.publish('post', { post: {
+        //              mutation: 'CREATED',
+        //              data: post
+        //          }});
+        //      }
+        //  // in case of update, we must not put "published value"
+        //  // the original / exsiting post.published
+        //  } else if(post.published) {
+        //      console.log('published === undefined', published)
+        //     // updated
+        //     console.log('updated')
+        //     pubsub.publish('post', { post: {
+        //         mutation: 'UPDATED',
+        //         data: post
+        //     }});
+        //  }
 
-         return post;
+        //  return post;
      },
-     deletePost(parent, { id }, { db: { posts, comments }, pubsub}, info) {
-        const postIndex = posts.findIndex(post => post.id === id);
-        if(postIndex === -1) throw new Error('Unable to find the post');
+     async deletePost(parent, { id }, { prisma, pubsub }, info) {
 
-        comments = comments.filter(comment => comment.post !== id);
+        const postExist = await prisma.exists.Post({ id });
+        if(!postExist) throw new Error('Unable to find the post');
+
+        return await prisma.mutation.deletePost({
+            where: { id }
+        }, info);
+
+
+        // const postIndex = posts.findIndex(post => post.id === id);
+        // if(postIndex === -1) throw new Error('Unable to find the post');
+
+        // comments = comments.filter(comment => comment.post !== id);
 
         // ES5
         // const deletedPosts = posts.splice(postIndex, 1);            
 
         //ES6
-        const [ post ] = posts.splice(postIndex, 1); 
+        // const [ post ] = posts.splice(postIndex, 1); 
 
         // deleted notification
-        if(post.published) {
-            pubsub.publish('post', { post: {
-                mutation: 'DELETED',
-                data: post
-            }})
-        }
+        // if(post.published) {
+        //     pubsub.publish('post', { post: {
+        //         mutation: 'DELETED',
+        //         data: post
+        //     }})
+        // }
 
-        return post;
+        // return post;
         // return deletedPosts[0];
 
      },
