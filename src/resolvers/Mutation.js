@@ -161,20 +161,20 @@ const Mutation = {
         }, info);
 
         console.log('post ===> ', post)
-
-        if(!post) throw new Error('Unable to find your post');
+        if(post.length === 0 ) throw new Error('Unable to find your post');
 
         return await prisma.mutation.updatePost({
             where: { id },
             data: {
                 title,
                 body,
-                published,
-                author: {
-                    connect: {
-                        id: author
-                    }
-                }
+                published //,
+                // author cannot be modified
+                // author: {
+                //     connect: {
+                //         id: author
+                //     }
+                // }
             }
         }, info);
 
@@ -262,67 +262,136 @@ const Mutation = {
         // return deletedPosts[0];
 
      },
-     createComment(parent, { data: { text, post, author }}, { db: { users, posts, comments }, pubsub }, info) {
+     async createComment(parent, { data: { text, post, author }}, { prisma, pubsub }, info) {
+        const postVerified = await prisma.exists.Post({ id: post });
+        if(!postVerified) throw new Error('Unable to find the post');
+        const userVerified = await prisma.exists.User({ id: author });
+        if(!userVerified) throw new Error('Unable to find the user');
+    
+        return await prisma.mutation.createComment({
+           data: {
+               text,
+               author: {
+                   connect: {
+                       id: author
+                   }
+               },
+               post: {
+                   connect: {
+                       id: post
+                   }
+               }
+           } 
+        }, info);
+        
+        // const postVerifed = posts.some(each_post => each_post.id === post && each_post.published);
+         // const userVerified = users.some(user => user.id === author);
+         
+        //  if(!postVerifed || !userVerified) throw new Error('User or Post is not available.');
 
-         const postVerifed = posts.some(each_post => each_post.id === post && each_post.published);
-         const userVerified = users.some(user => user.id === author);
-         if(!postVerifed || !userVerified) throw new Error('User or Post is not available.');
+        //  const comment = {
+        //      id: uuidv4(),
+        //      text,
+        //      post,
+        //      author
+        //  }
 
-         const comment = {
-             id: uuidv4(),
-             text,
-             post,
-             author
-         }
+        //  comments.push(comment);
+        //  // post (postId) must areadly exist.!!
+        //  // On a basis of this state, we can use subscription,
+        //  //     because the pubsub.asyncIterator is setup to find the existing postId
+        //  pubsub.publish(`comment ${ post }`, {
+        //      comment: {
+        //          mutation: 'CREATED',
+        //          data: comment
+        //      }
+        //  });
 
-         comments.push(comment);
-         // post (postId) must areadly exist.!!
-         // On a basis of this state, we can use subscription,
-         //     because the pubsub.asyncIterator is setup to find the existing postId
-         pubsub.publish(`comment ${ post }`, {
-             comment: {
-                 mutation: 'CREATED',
-                 data: comment
-             }
-         });
-
-         return comment;
+        //  return comment;
      },
-     deleteComment(parent, { id }, { db: { comments }, pubsub }, info) {
-        const commentIndex = comments.findIndex(comment => comment.id === id);
-        if(commentIndex === -1) throw new Error('Unable to find the comment');
-        const [ comment ] = comments.splice(commentIndex, 1);
+     deleteComment(parent, { id }, { prisma , pubsub }, info) {
+        return prisma.mutation.deleteComment({
+            where: { id }
+        }, info);
 
-        pubsub.publish(`comment ${ comment.post }`, { 
-            comment: {
-                mutation: 'DELETED',
-                data: comment
+
+        // const commentIndex = comments.findIndex(comment => comment.id === id);
+        // if(commentIndex === -1) throw new Error('Unable to find the comment');
+        // const [ comment ] = comments.splice(commentIndex, 1);
+
+        // pubsub.publish(`comment ${ comment.post }`, { 
+        //     comment: {
+        //         mutation: 'DELETED',
+        //         data: comment
+        //     }
+        // })
+
+        //  return comment;
+     },
+     async updateComment(parent, { id, data: { text, author, post } }, { prisma, pubsub }, info) {
+        
+        const isUserVerified = await prisma.exists.User({ id: author });
+        const isPostExisting = await prisma.exists.Post({ id: post});
+        if(!isUserVerified || !isPostExisting) throw new Error('The user or post is not available.');
+
+        const authority = await prisma.query.comments({
+            where: {
+                id,
+                AND: [{
+                  author: {
+                      id_co: author
+                  }  
+                }, {
+                  post: {
+                      id: post
+                  }
+                }]
             }
-        })
+        }, info);
 
-         return comment;
-     },
-     updateComment(parent, { id, data: { text, author, post } }, { db: { users, posts, comments }, pubsub }, info) {
-         const isUserVerified = users.some(user => user.id === author);
-         if(!isUserVerified) throw new Error('Unable to find the user');
+        console.log(authority)
+        if(authority.length === 0) throw new Error('Unable to find your comment');
 
-         const isPostExisting = posts.some(each_post => each_post.id === post);
-         if(!isPostExisting) throw new Error('Unable to find the post');
+        return await prisma.mutation.updateComment({
+            where: { id },
+            data: {
+                text,
+                author: {
+                    connect: {
+                        id: author
+                    }
+                },
+                post: {
+                    connect: {
+                        id: post
+                    }
+                }
+            }
+        }, info)
 
-         const comment = comments.find(comment => comment.id === id);
-         if(!comment) throw new Error('Comment is not availalbe!');
+        
+        
+        
+        //  const isUserVerified = users.some(user => user.id === author);
+        //  if(!isUserVerified) throw new Error('Unable to find the user');
 
-         if(typeof text === 'string') {
-             comment.text = text;
-             pubsub.publish(`comment ${ post }`, { 
-                 comment: {
-                     mutation: 'UPDATED',
-                     data: comment
-                 }
-            });
-         }
+        //  const isPostExisting = posts.some(each_post => each_post.id === post);
+        //  if(!isPostExisting) throw new Error('Unable to find the post');
 
-         return comment;
+        //  const comment = comments.find(comment => comment.id === id);
+        //  if(!comment) throw new Error('Comment is not availalbe!');
+
+        //  if(typeof text === 'string') {
+        //      comment.text = text;
+        //      pubsub.publish(`comment ${ post }`, { 
+        //          comment: {
+        //              mutation: 'UPDATED',
+        //              data: comment
+        //          }
+        //     });
+        //  }
+
+        //  return comment;
      }
 }
 
