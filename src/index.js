@@ -8,7 +8,6 @@ import prisma from './prisma';
 const pubsub = new PubSub();
 
 const server = new GraphQLServer({
-    // must exist even if we use prisma model.
     typeDefs: './src/schema.graphql',
     resolvers: {
         Query,
@@ -18,11 +17,29 @@ const server = new GraphQLServer({
         Post,
         Comment
     },
-    context: {
-        db,
-        pubsub,
-        prisma
+    // context is a kind of "redux or context" in react.
+    // It contains custom data being passed through your
+    //  resolver chian. This can be passed in as an object or
+    //  as a Functin with the signature (reg: contextParameters )!!!!
+    //2) funcitonal object
+
+    // request can be passed through context!
+    context(request) {
+        // request contains values of the client's req like express server.
+        // console.log(request)
+        return {
+            db,
+            pubsub,
+            prisma,
+            request
+        }
     }
+    // 1)
+    // context: {
+    //     db,
+    //     pubsub,
+    //     prisma
+    // }
 });
 
 server.start(() => console.log('Authentication!'));

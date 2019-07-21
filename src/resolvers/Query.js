@@ -17,7 +17,7 @@ const Query = {
         
 
         // info: 
-        console.log(JSON.stringify(info, undefined, 4))
+        // console.log(JSON.stringify(info, undefined, 4))
 
         //2) with args
         const opArgs = {};

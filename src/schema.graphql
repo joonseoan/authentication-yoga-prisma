@@ -7,7 +7,11 @@ type Query {
 }
 
 type Mutation {
-    createUser(data: createUserInput!): User!
+    # 2) With token
+    createUser(data: createUserInput!): AuthPayload!
+    # 1)
+    # without token
+    # createUser(data: createUserInput!): User!
     deleteUser(id: ID!): User!
     # updateUserInput must not mandatory!!!
     updateUser(id: ID!, data: updateUserInput ): User!
@@ -17,6 +21,14 @@ type Mutation {
     createComment(data: createCommentInput!): Comment!
     deleteComment(id: ID!): Comment!
     updateComment(id: ID!, data: updateCommentInput): Comment!
+
+    # challenge
+    login(data: loginInput): AuthPayload!
+}
+
+type AuthPayload {
+    token: String!
+    user: User!
 }
 
 #  IMPORTANT!!!
@@ -85,7 +97,8 @@ input createPostInput {
     title: String!
     body: String!
     published: Boolean
-    author: ID!
+    # Since JWT, We do not need to manually input author!
+    # author: ID!
 }
 
 input updatePostInput {
@@ -105,6 +118,11 @@ input updateCommentInput {
     text: String
     author: ID!
     post: ID!
+}
+
+input loginInput {
+    email: String!
+    password: String!
 }
 
 # ENUM : We can use the one of three String types

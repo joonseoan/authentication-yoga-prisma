@@ -1,10 +1,11 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
+import getUserId from '../utils/getUserId';
 
 const Mutation = {
     // must follow node schema!
     async createUser(parent, { data }, { prisma }, info) {
-
 
         // with password
         if(data.password && data.password.length < 8) 
@@ -17,13 +18,33 @@ const Mutation = {
         // const emailTaken = await prisma.exists.User({ email: data.email });
         // if(emailTaken) throw new Error('Email is already taken');
 
-        // must be mapped over a format of prisma "input"
-        return await prisma.mutation.createUser({ 
+
+        // gotta change schema in line eventually with "return" down below.
+
+        // "info" must be erased because if only contains the internal field information
+        //  that returns like '{ id, email name comment { id  name}}'
+        // In this case, we do not return the internal field information like id, name, email, password.
+        // It returns nothing but "user" object. The info is not able to find "user" itself object.
+        const user = await prisma.mutation.createUser({ 
             data: {
                ...data, 
                password
             } 
-        }, info);
+        });
+        
+        return {
+            user,
+            token: jwt.sign({ userId: user.id }, 'mysolution')
+        };
+
+        // Without JWT
+        // must be mapped over a format of prisma "input"
+        // return await prisma.mutation.createUser({ 
+        //     data: {
+        //        ...data, 
+        //        password
+        //     } 
+        // }, info);
 
         // Without prisma
         //  const emailTaken = users.some(user => user.email === email);
@@ -115,7 +136,12 @@ const Mutation = {
         // return deletedUsers[0];
 
      },
-     async createPost(parent, { data: { title, body, published, author } }, { prisma, pubsub }, info) {
+     async createPost(parent, { data: { title, body, published, author } }, { prisma, request }, info) {
+        
+        // With JWT:
+        // return userId from JWT from the client
+        const userId = getUserId(request);
+        
         const userVerified = await prisma.exists.User({ id: author });
         if(!userVerified) throw new Error('Unable to find the user.');
         
@@ -126,7 +152,13 @@ const Mutation = {
                 published,
                 author: {
                     connect: {
-                        id: author
+                        // 2) With JWT
+                        // userId should be used 
+                        // because we need to verify the user is logged in.
+                        id: userId
+
+                        // 1) without JWT
+                        // id: author
                     }
                 }
             }
@@ -375,7 +407,6 @@ const Mutation = {
             // }
         }, info);
 
-        console.log('authority: ', authority)
         if(authority.length === 0) throw new Error('Unable to find your comment');
 
         return await prisma.mutation.updateComment({
@@ -415,7 +446,23 @@ const Mutation = {
         //  }
 
         //  return comment;
-     }
+     },
+     async login(parent, { data: { email, password }}, { prisma }, info) {
+        if(password.length < 8) 
+            throw new Error('Password must be greater than 8 characgters');
+        // user or user's differentiation!!!
+        const user = await prisma.query.user({
+             where: { email }
+        });
+        if(!user) throw new Error('Please, signup first.');
+
+        const passwordVerified = await bcrypt.compare(password, user.password);
+        if(!passwordVerified) throw new Error('Your password is wrong');
+
+        const token = jwt.sign({ userId: user.id }, 'mysolution');
+
+        return { user, token };
+     } 
 }
 
 export { Mutation };
