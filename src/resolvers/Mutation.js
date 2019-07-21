@@ -1,15 +1,29 @@
-import uuidv4 from 'uuid/v4'; 
+import bcrypt from 'bcryptjs';
+
 
 const Mutation = {
+    // must follow node schema!
     async createUser(parent, { data }, { prisma }, info) {
+
+
+        // with password
+        if(data.password && data.password.length < 8) 
+            throw new Error('The password must greater than 7 characters or letters');
        
-        // exists.User from "users" array
-        const emailTaken = await prisma.exists.User({ email: data.email });
+        // bcryptjs provides "promise"
+        const password = await bcrypt.hash(data.password, 10);
 
-        if(emailTaken) throw new Error('Email is already taken');
+        // Do use this one because "email" is setup @unique in prisma
+        // const emailTaken = await prisma.exists.User({ email: data.email });
+        // if(emailTaken) throw new Error('Email is already taken');
 
-        // must follow node schema!
-        return await prisma.mutation.createUser({ data }, info);
+        // must be mapped over a format of prisma "input"
+        return await prisma.mutation.createUser({ 
+            data: {
+               ...data, 
+               password
+            } 
+        }, info);
 
         // Without prisma
         //  const emailTaken = users.some(user => user.email === email);
@@ -297,9 +311,10 @@ const Mutation = {
         //  }
 
         //  comments.push(comment);
-        //  // post (postId) must areadly exist.!!
-        //  // On a basis of this state, we can use subscription,
-        //  //     because the pubsub.asyncIterator is setup to find the existing postId
+        //  post (postId) must areadly exist.!!
+        //  On a basis of this state, we can use subscription,
+        //     because the pubsub.asyncIterator is setup to find the existing postId
+        
         //  pubsub.publish(`comment ${ post }`, {
         //      comment: {
         //          mutation: 'CREATED',
@@ -335,21 +350,32 @@ const Mutation = {
         if(!isUserVerified || !isPostExisting) throw new Error('The user or post is not available.');
 
         const authority = await prisma.query.comments({
-            where: {
-                id,
-                AND: [{
-                  author: {
-                      id_co: author
-                  }  
-                }, {
-                  post: {
-                      id: post
-                  }
-                }]
-            }
+            AND: [{
+                id
+            }, {
+                author: {
+                    contains_id: author
+                }
+            }, {
+                post: {
+                    contains_id: post
+                }
+            }]
+            // where: {
+            //     id,
+            //     AND: [{
+            //       author: {
+            //           id_contains: author
+            //       }  
+            //     }, {
+            //       post: {
+            //           id_contains: post
+            //       }
+            //     }]
+            // }
         }, info);
 
-        console.log(authority)
+        console.log('authority: ', authority)
         if(authority.length === 0) throw new Error('Unable to find your comment');
 
         return await prisma.mutation.updateComment({
@@ -369,9 +395,6 @@ const Mutation = {
             }
         }, info)
 
-        
-        
-        
         //  const isUserVerified = users.some(user => user.id === author);
         //  if(!isUserVerified) throw new Error('Unable to find the user');
 

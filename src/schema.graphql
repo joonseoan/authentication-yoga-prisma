@@ -46,7 +46,8 @@ type Subscription {
 type User {
     id: ID!
     name: String!
-    email: String
+    email: String!
+    password: String!
     posts: [Post!]!
     comments: [Comment!]!
 }
@@ -70,12 +71,14 @@ type Comment {
 input createUserInput {
     name: String!
     email: String!
+    password: String!
 }
 
 # updateUserInput : it is update. Therefore, we can't add mandatory exclamantation!!!
 input updateUserInput {
     name: String
     email: String
+    password: String
 }
 
 input createPostInput {
@@ -111,20 +114,43 @@ enum MutationType {
     DELETED    
 }
 
-type PostSubscriptionPayload {
-    # mutatoin: Sting! => a mutation name
-    
-    # 1)
-    # mutation: String!
+# Challenge
+# 1) without prisma
+# type CommentSubscriptionPayload {
+#     # mutation: String!
+#     mutation: MutationType!
+#     data: Comment!
+# }
 
-    # 2) Instead of String!
+#  2) with Prisma
+# switching to prisma-based payload
+#  use "node" key instead of "data" above
+type CommentSubscriptionPayload {
     mutation: MutationType!
-    data: Post!
+    # must setup nullable!!!!! for delete!! 
+    # It ends up with null when delete
+    node: Comment
+    # We do not need to use "updateField" and "previousVlue"
+    #   which are the fields of prisma based "CommentSubscriptionPayload"
+    # updateField
+    # previousVlue
+
 }
 
-# Challenge
-type CommentSubscriptionPayload {
-    # mutation: String!
+# 1) Without prisma
+# type PostSubscriptionPayload {
+#     # mutatoin: Sting! => a mutation name
+    
+#     # 1)
+#     # mutation: String!
+
+#     # 2) Instead of String!
+#     mutation: MutationType!
+#     data: Post!
+# }
+
+# 2) With prisma
+type PostSubscriptionPayload {
     mutation: MutationType!
-    data: Comment!
+    node: Post
 }
