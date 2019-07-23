@@ -12,9 +12,22 @@ type Mutation {
     # 1)
     # without token
     # createUser(data: createUserInput!): User!
-    deleteUser(id: ID!): User!
+
+    # 2)
+    # With token, we should decoded token.
+    # No need to use id args
+    deleteUser: User!
+
+    # 1)
+    # Without Token, we should use id
+    # deleteUser(id: ID!): User!
+    # With token, we do not need to use id arg 
+    #   because we should get the id value from the token.
+    updateUser(data: updateUserInput ): User!
+
+   # Without Token
     # updateUserInput must not mandatory!!!
-    updateUser(id: ID!, data: updateUserInput ): User!
+    # updateUser(id: ID!, data: updateUserInput ): User!
     createPost(data: createPostInput!): Post!
     deletePost(id: ID!): Post!
     updatePost(id: ID!, data: updatePostInput): Post!

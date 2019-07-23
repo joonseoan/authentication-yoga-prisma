@@ -61,7 +61,10 @@ const Mutation = {
         //  return user;
 
      },
-     async updateUser(parent, { id, data }, { prisma }, info) {
+     async updateUser(parent, { data }, { prisma, request }, info) {
+        
+        const id = getUserId(request);
+        
         const userExist = await prisma.exists.User({ id });
         if(!userExist) throw new Error('The does not exist.');
         
@@ -96,7 +99,9 @@ const Mutation = {
      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!  IMPORTANT !!!!!!!!!!!!!!!!!!!!1
      // client: must use node resolver's format with arg
      // prisma: must use prisma's schema format with args
-     async deleteUser(parent, { id }, { prisma }, info) {
+     async deleteUser(parent, args, { prisma, request }, info) {
+
+        const id = getUserId(request);
         
         const userExist = await prisma.exists.User({ id });
         if(!userExist) throw new Error ('The ID does not exist.');
@@ -136,14 +141,16 @@ const Mutation = {
         // return deletedUsers[0];
 
      },
-     async createPost(parent, { data: { title, body, published, author } }, { prisma, request }, info) {
+     async createPost(parent, { data: { title, body, published } }, { prisma, request }, info) {
         
         // With JWT:
         // return userId from JWT from the client
         const userId = getUserId(request);
         
-        const userVerified = await prisma.exists.User({ id: author });
-        if(!userVerified) throw new Error('Unable to find the user.');
+        // Wiith JWT, we do not need to implement this one
+        //  because it is getUserId function work for it.
+        // const userVerified = await prisma.exists.User({ id: author });
+        // if(!userVerified) throw new Error('Unable to find the user.');
         
         return await prisma.mutation.createPost({
             data: {
@@ -275,10 +282,22 @@ const Mutation = {
 
         //  return post;
      },
-     async deletePost(parent, { id }, { prisma, pubsub }, info) {
+     async deletePost(parent, { id }, { prisma, request }, info) {
 
-        const postExist = await prisma.exists.Post({ id });
-        if(!postExist) throw new Error('Unable to find the post');
+        // in order to delete the post who wrote that post
+        const userId = getUserId(request);
+        const postOwnerVerified = await prisma.exists.Post({
+            // The post return format must be used
+            // [ IMPORTANT : It is an AND operation!!!]
+            id,
+            author: { id: userId }
+        });
+
+        if(!postOwnerVerified) throw new Error('Unable to find the post.');
+
+        // Without JWT
+        // const postExist = await prisma.exists.Post({ postId });
+        // if(!postExist) throw new Error('Unable to find the post');
 
         return await prisma.mutation.deletePost({
             where: { id }
