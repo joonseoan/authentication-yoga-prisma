@@ -118,18 +118,22 @@ input updatePostInput {
     title: String
     body: String
     published: Boolean
-    author: ID!
+
+    # Without token
+    # author: ID!
 }
 
 input createCommentInput {
     text: String!
     post: ID!
-    author: ID!
+    # Without token
+    # author: ID!
 }
 
 input updateCommentInput {
     text: String
-    author: ID!
+    # Without token
+    # author: ID!
     post: ID!
 }
 

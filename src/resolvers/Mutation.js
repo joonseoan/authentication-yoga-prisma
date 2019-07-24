@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 import getUserId from '../utils/getUserId';
+import { get } from 'http';
 
 const Mutation = {
     // must follow node schema!
@@ -193,41 +194,47 @@ const Mutation = {
          
         //  return post;
      },
-     async updatePost(parent, { id, data: { title, body, published, author }}, { prisma, pubsub }, info) {
-         
-         // const userVerified = users.some(user => user.id === author)
-         // if(!userVerified) throw new Error('Unable to find the user');
+     async updatePost(parent, { id, data: { title, body, published }}, { prisma, request }, info) {
 
-        const userExist = await prisma.exists.User({ id : author });
-        if(!userExist) throw new Error('Unable to find the user');
+        // With token
+        const userId = getUserId(request);
+        const verifiedUser = await prisma.exists.Post({
+            id,
+            author: { id: userId }
+        });
 
-        const post = await prisma.query.posts({
-            where: {
-                AND: [{
-                    id_contains: id
-                }, { 
-                    author: {
-                        id_contains: author
-                    }
-                }]
-            }
-        }, info);
+        console.log('verifiedUser: ', verifiedUser)
+        if(!verifiedUser) throw new Error('Unable to find the post for you');
 
-        console.log('post ===> ', post)
-        if(post.length === 0 ) throw new Error('Unable to find your post');
+        // With Prisma
+        // const userExist = await prisma.exists.User({ id : author });
+        // if(!userExist) throw new Error('Unable to find the user');
+        
+        // Without prisma
+        // const userVerified = users.some(user => user.id === author)
+        // if(!userVerified) throw new Error('Unable to find the user');
+
+        // Without token
+        // const post = await prisma.query.posts({
+        //     where: {
+        //         AND: [{
+        //             id_contains: id
+        //         }, { 
+        //             author: {
+        //                 id_contains: author
+        //             }
+        //         }]
+        //     }
+        // }, info);
+        // console.log('post ===> ', post)
+        // if(post.length === 0 ) throw new Error('Unable to find your post');
 
         return await prisma.mutation.updatePost({
             where: { id },
             data: {
                 title,
                 body,
-                published //,
-                // author cannot be modified
-                // author: {
-                //     connect: {
-                //         id: author
-                //     }
-                // }
+                published
             }
         }, info);
 
@@ -327,18 +334,24 @@ const Mutation = {
         // return deletedPosts[0];
 
      },
-     async createComment(parent, { data: { text, post, author }}, { prisma, pubsub }, info) {
-        const postVerified = await prisma.exists.Post({ id: post });
-        if(!postVerified) throw new Error('Unable to find the post');
-        const userVerified = await prisma.exists.User({ id: author });
-        if(!userVerified) throw new Error('Unable to find the user');
+     async createComment(parent, { data: { text, post }}, { prisma, request }, info) {
+
+        // With token
+        const userId = getUserId(request);
+        
+        // Without token
+        // const postVerified = await prisma.exists.Post({ id: post });
+        // if(!postVerified) throw new Error('Unable to find the post');
+        // const userVerified = await prisma.exists.User({ id: author });
+        // if(!userVerified) throw new Error('Unable to find the user');
     
         return await prisma.mutation.createComment({
            data: {
                text,
                author: {
                    connect: {
-                       id: author
+                       // lock down the user who logged in.
+                       id: userId
                    }
                },
                post: {
@@ -375,7 +388,16 @@ const Mutation = {
 
         //  return comment;
      },
-     deleteComment(parent, { id }, { prisma , pubsub }, info) {
+     async deleteComment(parent, { id }, { prisma , request }, info) {
+
+        const userId = getUserId(request);
+        const verifiedUser = await prisma.exists.Comment({
+            id,
+            author: { id: userId }
+        });
+
+        if(!verifiedUser) throw new Error('Unable to find comment for you.');
+
         return prisma.mutation.deleteComment({
             where: { id }
         }, info);
@@ -394,25 +416,39 @@ const Mutation = {
 
         //  return comment;
      },
-     async updateComment(parent, { id, data: { text, author, post } }, { prisma, pubsub }, info) {
+     async updateComment(parent, { id, data: { text, post } }, { prisma, request }, info) {
         
-        const isUserVerified = await prisma.exists.User({ id: author });
-        const isPostExisting = await prisma.exists.Post({ id: post});
-        if(!isUserVerified || !isPostExisting) throw new Error('The user or post is not available.');
+        // With token
+        const userId = getUserId(request);
+        
+        const verifiedUser = await prisma.exists.Comment({
+            id,
+            author: {
+                id: userId
+            }
+        });
 
-        const authority = await prisma.query.comments({
-            AND: [{
-                id
-            }, {
-                author: {
-                    contains_id: author
-                }
-            }, {
-                post: {
-                    contains_id: post
-                }
-            }]
-            // where: {
+        if(!verifiedUser) throw new Error('Unable to find your post and comment');
+
+        // Without token
+        // const isUserVerified = await prisma.exists.User({ id: author });
+        // const isPostExisting = await prisma.exists.Post({ id: post});
+        // if(!isUserVerified || !isPostExisting) throw new Error('The user or post is not available.');
+
+        // Without token
+        // const authority = await prisma.query.comments({
+        //     AND: [{
+        //         id
+        //     }, {
+        //         author: {
+        //             contains_id: author
+        //         }
+        //     }, {
+        //         post: {
+        //             contains_id: post
+        //         }
+        //     }]
+        //     // where: {
             //     id,
             //     AND: [{
             //       author: {
@@ -424,26 +460,21 @@ const Mutation = {
             //       }
             //     }]
             // }
-        }, info);
+        // }, info);
 
-        if(authority.length === 0) throw new Error('Unable to find your comment');
+        // if(authority.length === 0) throw new Error('Unable to find your comment');
 
         return await prisma.mutation.updateComment({
             where: { id },
             data: {
                 text,
-                author: {
-                    connect: {
-                        id: author
-                    }
-                },
                 post: {
                     connect: {
                         id: post
                     }
                 }
             }
-        }, info)
+        }, info);
 
         //  const isUserVerified = users.some(user => user.id === author);
         //  if(!isUserVerified) throw new Error('Unable to find the user');
