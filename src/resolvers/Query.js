@@ -1,3 +1,5 @@
+import getUserId from '../utils/getUserId';
+
 const Query = {
     users(parent, { query }, { prisma }, info) {
 
@@ -114,23 +116,59 @@ const Query = {
         return prisma.query.comments(opArgs, info);
 
         // return comments;
+    },
+    async me(parent, args, { prisma, request }, info) {
+        
+        const userId = getUserId(request);
+        const user = await prisma.query.user({
+            where: { id: userId }
+        }, info);
+
+        if(!user) throw new Error('Unable to find the user');
+
+        return user;
+    },
+    async post(parent, { id }, { prisma, request }, info) {
+        // IMPORTANT!!!!!!!!!!!!!!!!!!!!!!
+        // "false": arbituary it skips "requireAuth === false";
+        //      even though token is not available.
+
+        // The user without login (without token) is still able to get 
+        //  published post.
+        const userId = getUserId(request, false);
+        
+        // From this line, without authentication, it must not work.
+
+        // Important. In prisma playground has a singular "post"!!!!
+        // However, it has a limitation that the condition, "where" has a single field.
+        // Only "id" can be compared.
+
+        // In the other hand, multiple "posts" has different fields.
+        //  Therfore, we can define different conditions.
+
+        const [ post ] = await prisma.query.posts({
+            where: {
+                id,
+                /* 
+                    Scenario: 1) published === true <=== it can be accessed by any persion
+                              2) published === false <=== it can be accessed only by the author 
+                
+                */
+                OR: [{
+                    published: true
+                }, {
+                    author: {
+                        // userId must not be "undefined" ===> error!!!!
+                        id: userId
+                    }
+                }]
+            }
+        }, info);
+
+        if(!post) throw new Error('Unabl to find the post');
+
+        return post;       
     }
-    // me(parent, args, ctx, info) {
-    //     return {
-    //         id: 'ttt',
-    //         name: 'Alex',
-    //         email: 'alex@example.com',
-    //         age: 23
-    //     }
-    // },
-    // post(parent, args, ctx, info) {
-    //     return {
-    //         id: 'aaa',
-    //         title: 'Awesome you',
-    //         body: 'hahahaha',
-    //         published: false
-    //     }
-    // }
 }
 
 export { Query };

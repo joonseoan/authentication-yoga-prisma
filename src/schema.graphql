@@ -1,9 +1,17 @@
 type Query {
+    # 1) Can be publicly available... 
     users(query: String): [User!]!
     posts(query: String): [Post!]!
     comments: [Comment!]!
+  
+    # 1) With/Without token
     me: User!
-    post: Post!
+    # 2)Normally, id is required for the user to accesss the post.
+    # Therefore, need to put id args
+    # With ID
+    post(id: ID!): Post!
+    # Without "id" 
+    # post: Post!
 }
 
 type Mutation {

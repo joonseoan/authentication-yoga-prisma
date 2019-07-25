@@ -1,17 +1,51 @@
 import jwt from 'jsonwebtoken';
 
-export default (request) => {
+
+// 2) usint default authentication value
+/* 
+    It is for the item which is ristricted to be accessed by the login user
+    Without the token, it gets caught in "throw Error" class.
+    Therefore, in mutations, withouth token, it generates an error!!! and working stops.
+    If the second arg is not invoked, it is still "true"
+    1)
+    requireAuth = true => user does not have authority. ==> generates an error
+    
+    // Even though the user does not the token, they are able to access to the public items
+    // For instance, in this scenario, the "published === true" post can be accessed by any user.
+    2)
+    requireAuth = false => user has authority ===> no error
+*/
+
+// 2) In order to grant access to public items
+export default (request, requireAuth = true) => {
+
+// 1) In this case, all items are accessed only by the login user
+// export default (request) => {
+
     // request.request ==> req.
-    console.log(request.request.headers.authorization)
     const header = request.request.headers.authorization;
 
-    if(!header) {
-        throw new Error('Authentication is required.');
+    // 2) With args
+    if(header) {
+        const token = header.replace('Bearer ', '');
+        const decode = jwt.verify(token, 'mysolution')
+        return decode.userId;
     }
 
-    const token = header.replace('Bearer ', '');
-    const decode = jwt.verify(token, 'mysolution')
+    if(requireAuth) {
+        throw new Error('Authentication required.');
+    }
 
-    return decode.userId;
+    return null;
+
+    // 1) Without "requireAuth args"
+    // if(!header) {
+    //     throw new Error('Authentication is required.');
+    // }
+
+    // const token = header.replace('Bearer ', '');
+    // const decode = jwt.verify(token, 'mysolution')
+
+    // return decode.userId;
    //  return token;
 }
