@@ -74,21 +74,64 @@ const Query = {
         //     user.name.toLowerCase().includes(query.toLowerCase()));
 
     },
+    // Challenge
+    myPosts(parent, { query }, { prisma, request }, info) {
+        const userId = getUserId(request);
+        const opArgs = {
+            where: {
+                author: {
+                    id: userId
+                }
+            }
+        };
+        if(query) {
+            opArgs.where.OR = [{
+                title_contains: query
+            }, {
+                body_contains: query
+            }] 
+        }
+        const posts = prisma.query.posts(opArgs, info);
+        if(posts.length === 0) throw new Error('Your posts are not availabl.');
+        
+        return posts;
+    },
     posts(parent, { query }, { prisma }, info) {
 
-        // With the first arg
-        const opArgs = {};
-        if(query) {
-            opArgs.where = {
-                AND: [{
-                    published: false
-                }, {
-                    author: {
-                        name_contains: query
-                    }
-                }]
+        // For all users, the posts published only can be accesses.
+        const opArgs = {
+            where: {
+                published: true
             }
-        }
+        };
+
+        // get posts that are matched with query string, out of posts 
+        //  which have published true
+        if(query) {
+            opArgs.where.OR = [{
+                title_contains: query
+            }, {
+                body_contains: query
+            }]
+        };
+
+        return prisma.query.posts({ opArgs, info});
+        
+        
+        // With the first arg
+        // const opArgs = {};
+
+        // if(query) {
+        //     opArgs.where = {
+        //         AND: [{
+        //             published: false
+        //         }, {
+        //             author: {
+        //                 name_contains: query
+        //             }
+        //         }]
+        //     }
+        // }
 
         return prisma.query.posts(opArgs, info);
 
@@ -107,11 +150,9 @@ const Query = {
         //     return isTitleMatched || isBodyMatched;
         // });
     },
+    // fully public therefore, any one can access to all comments
     comments(parent, args, { prisma }, info) {
-
         const opArgs = {};
-
-        
 
         return prisma.query.comments(opArgs, info);
 

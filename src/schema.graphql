@@ -2,6 +2,7 @@ type Query {
     # 1) Can be publicly available... 
     users(query: String): [User!]!
     posts(query: String): [Post!]!
+    myPosts(query: String): [Post!]!
     comments: [Comment!]!
   
     # 1) With/Without token
