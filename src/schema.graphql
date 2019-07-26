@@ -80,7 +80,15 @@ type Subscription {
 type User {
     id: ID!
     name: String!
-    email: String!
+    # For instance, when we make the email
+    #   available only for authenticated users and myself!!!
+    #   we need to email nullable because for inappropriate users
+    #   should not get the email addresse.
+    
+    email: String
+
+    # when the email can be publicly available for all users 
+    # email: String!
     password: String!
     posts: [Post!]!
     comments: [Comment!]!

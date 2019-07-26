@@ -2,21 +2,14 @@
 import { GraphQLServer, PubSub } from 'graphql-yoga';
 
 import db from './db';
-import { Query, Mutation, Subscription, User, Post, Comment } from './resolvers';
+import { resolvers, fragmentReplacements } from './resolvers';
 import prisma from './prisma';
 
 const pubsub = new PubSub();
 
 const server = new GraphQLServer({
     typeDefs: './src/schema.graphql',
-    resolvers: {
-        Query,
-        Mutation,
-        Subscription,
-        User,
-        Post,
-        Comment
-    },
+    resolvers,
     // context is a kind of "redux or context" in react.
     // It contains custom data being passed through your
     //  resolver chian. This can be passed in as an object or
@@ -33,7 +26,8 @@ const server = new GraphQLServer({
             prisma,
             request
         }
-    }
+    },
+    fragmentReplacements
     // 1)
     // context: {
     //     db,

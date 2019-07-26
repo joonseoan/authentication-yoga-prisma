@@ -8,4 +8,5 @@ const Comment = {
     // }
 }
 
-export { Comment };
+// export { Comment };
+export default Comment;

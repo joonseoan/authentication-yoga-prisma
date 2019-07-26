@@ -212,4 +212,4 @@ const Query = {
     }
 }
 
-export { Query };
+export default Query;

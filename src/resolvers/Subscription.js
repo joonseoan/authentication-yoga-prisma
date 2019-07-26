@@ -79,4 +79,4 @@ const Subscription = {
 
 }
 
-export { Subscription };
+export default Subscription;
