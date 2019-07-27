@@ -44,12 +44,11 @@ const User = {
         */
         
     // must use a plain object to use "fragment"
-
-    // 1)
-    // email({ id, email }, args, { request }, info) {
-
     // 2)
     email: {
+
+        // 1)
+        // email({ id, email }, args, { request }, info) {
 
         // defining a field, "id" for manipulation down below.
         fragment: 'fragment userId on User { id }',
@@ -135,21 +134,10 @@ const User = {
                     published: true,
                     author: { id }
                 }
-            }, info)
-
-           
+            }, info)  
         }
-
     }
     
-
-        
-
-
-
-
-    
-
     // with prisma ===> nothing
     // because prisma applys the down below automatically by implementing info!!!
 

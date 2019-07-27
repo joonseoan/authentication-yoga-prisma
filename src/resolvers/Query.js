@@ -32,8 +32,6 @@ const Query = {
                 // Two conditions down below must be satisfied.
                 AND: [{
                     name_contains: query
-                }, {
-                    email_contains: query
                 }]                 
                 
                 // 2)
@@ -115,7 +113,7 @@ const Query = {
             }]
         };
 
-        return prisma.query.posts({ opArgs, info});
+        return prisma.query.posts( opArgs, info );
         
         
         // With the first arg
@@ -133,13 +131,11 @@ const Query = {
         //     }
         // }
 
-        return prisma.query.posts(opArgs, info);
+        // return prisma.query.posts(opArgs, info);
 
         
         // 1) Without the first arg
         // return prisma.query.posts(null, info);
-
-        
 
         // Without prisma
         // if(!query) return posts;

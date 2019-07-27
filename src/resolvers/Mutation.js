@@ -203,6 +203,21 @@ const Mutation = {
             author: { id: userId }
         });
 
+        const postPublished = await prisma.exists.Post({
+            id,
+            published: true
+         });
+
+         if(postPublished && published === false) {
+            await prisma.mutation.deleteManyComments({
+                where: {
+                    post: {
+                        id
+                    }
+                }
+            })
+        }
+
         console.log('verifiedUser: ', verifiedUser)
         if(!verifiedUser) throw new Error('Unable to find the post for you');
 
@@ -228,6 +243,10 @@ const Mutation = {
         // }, info);
         // console.log('post ===> ', post)
         // if(post.length === 0 ) throw new Error('Unable to find your post');
+
+        
+
+
 
         return await prisma.mutation.updatePost({
             where: { id },
@@ -335,10 +354,23 @@ const Mutation = {
 
      },
      async createComment(parent, { data: { text, post }}, { prisma, request }, info) {
-
         // With token
         const userId = getUserId(request);
-        
+        // My Code
+        // const  [commentingPost ] = await prisma.query.posts({ 
+        //     where: { 
+        //         id : post,
+        //         published: true
+        //     }
+        // }, info);
+
+        // Andrew Code
+        const commentingPost = await prisma.exists.Post({
+            id: post,
+            published: true
+        })
+        if(!commentingPost) throw new Error('The post is not published, Sorry');
+
         // Without token
         // const postVerified = await prisma.exists.Post({ id: post });
         // if(!postVerified) throw new Error('Unable to find the post');
