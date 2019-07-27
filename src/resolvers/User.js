@@ -91,64 +91,9 @@ const User = {
             */
             // Compare single by single email
 
-            console.log(id)
-            console.log('userId: ', userId)
-            /* 
-            [Data Comparison]
-                ["users" pural]
-                userId:  cjyf6cg2t0005075776s80sws
-                cjy9guf7200150757iypx6l9b
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyav2iyd000407573j4pflpo
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyaxi5hh001e0757oporftln
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyaxii39001k07579n3dq6ue
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyc6zndn002j0757kgww5bqt
-                userId:  cjyf6cg2t0005075776s80sws
-                cjycdnqa6009n075739wb8zn3
-                userId:  cjyf6cg2t0005075776s80sws
-                cjydbgqsh00040757jb4nrmgl
-                userId:  cjyf6cg2t0005075776s80sws
-                cjydi32md00180757ayzjfv5g
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyf6cg2t0005075776s80sws
-                userId:  cjyf6cg2t0005075776s80sws
+            // console.log(id)
+            // console.log('userId: ', userId)
             
-            */
-            // Compare single by single email
-
-            console.log(id)
-            console.log('userId: ', userId)
-            /* 
-            [Data Comparison]
-                ["users" pural]
-                userId:  cjyf6cg2t0005075776s80sws
-                cjy9guf7200150757iypx6l9b
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyav2iyd000407573j4pflpo
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyaxi5hh001e0757oporftln
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyaxii39001k07579n3dq6ue
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyc6zndn002j0757kgww5bqt
-                userId:  cjyf6cg2t0005075776s80sws
-                cjycdnqa6009n075739wb8zn3
-                userId:  cjyf6cg2t0005075776s80sws
-                cjydbgqsh00040757jb4nrmgl
-                userId:  cjyf6cg2t0005075776s80sws
-                cjydi32md00180757ayzjfv5g
-                userId:  cjyf6cg2t0005075776s80sws
-                cjyf6cg2t0005075776s80sws
-                userId:  cjyf6cg2t0005075776s80sws
-            
-            */
-            // Compare single by single email
-
-            console.log(id)
-            console.log('userId: ', userId)
             
 
             // By using fragment, id value is fetched for this comparison
@@ -165,18 +110,32 @@ const User = {
     posts: {
         // defnining the parent field to be fetched only for manipulation
         fragment: 'fragment userIdField on User { id }',
-         resolve({ id }, args, { prisma , request }, info) {
+        resolve({ id }, args, { prisma }, info) {
 
-            const userId = getUserId(request, false);
-            
-            if(userId && userId === id) {
-                console.log('userId : --------------->', userId)
-                return prisma.query.posts({
-                    where: {
-                        published: false
-                    }
-                }, info)
-            }
+            // Once weu use if statement like the below, 
+            //  "false" condition users are not able to generate 
+            //  "posts" fields. Instead, it returns "null" which viloates the schema.
+
+            // const userId = getUserId(request, false);
+            // if(userId && userId === id) {
+                
+                // return prisma.query.posts({
+                //     where: {
+                //         published: true,
+                //         author: { id }
+                //     }
+                // }, info)
+            // }
+
+            // if the where condition is not required,
+            //  we do not need to specify this function.
+
+            return prisma.query.posts({
+                where: {
+                    published: true,
+                    author: { id }
+                }
+            }, info)
 
            
         }
