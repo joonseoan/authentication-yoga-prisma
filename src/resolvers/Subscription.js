@@ -1,7 +1,8 @@
+import getUserId from '../utils/getUserId';
+
 const Subscription = {
     comment: {
         subscribe(parent, { postId }, { prisma }, info) {
-
             // prisma subscription with args for particular post
             return prisma.subscription.comment({
                 where: {
@@ -74,6 +75,29 @@ const Subscription = {
 
             // with Prisma
             // return pubsub.asyncIterator('post');
+        }
+    },
+    myPost: {
+        subscribe(parent, args, { prisma, request }, info) {
+            // Bear in mind that, since we use Subscription,
+            // "subscribe" method assigns the token in different "request" field
+            //  by using websocket.
+            // Please, find "getUserId" in utils
+            const userId = getUserId(request);
+
+            const post = prisma.subscription.post({
+                where: {
+                   node: {
+                       author: {
+                           id: userId
+                       }
+                   }
+                }
+            }, info);
+
+            if(!post) throw new Error('Unable to fid your post')
+
+            return post;
         }
     }
 

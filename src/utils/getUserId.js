@@ -22,8 +22,19 @@ export default (request, requireAuth = true) => {
 // 1) In this case, all items are accessed only by the login user
 // export default (request) => {
 
+    // 3)
+    // Creating a dynamic token information (on a basis of "request.request")
+    const header = request.request ?  
+        request.request.headers.authorization :
+        request.connection.context.Authorization;
+
+    // 2) for prisma subscription using websocket.
+    // const header = request.connection.context.Authorization;
+
+
+    // 1) for prisma mutation and query using startdard http request
     // request.request ==> req.
-    const header = request.request.headers.authorization;
+    // const header = request.request.headers.authorization;
 
     // 2) With args
     if(header) {

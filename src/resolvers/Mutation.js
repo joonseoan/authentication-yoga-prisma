@@ -1,19 +1,19 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 import getUserId from '../utils/getUserId';
-import { get } from 'http';
+import getToken from '../utils/createToken';
+import getHashPassword from '../utils/hashPassword';
 
 const Mutation = {
     // must follow node schema!
     async createUser(parent, { data }, { prisma }, info) {
 
         // with password
-        if(data.password && data.password.length < 8) 
-            throw new Error('The password must greater than 7 characters or letters');
+        // if(data.password && data.password.length < 8) 
+        //     throw new Error('The password must greater than 7 characters or letters');
        
         // bcryptjs provides "promise"
-        const password = await bcrypt.hash(data.password, 10);
+        const password = await getHashPassword(data.password);
 
         // Do use this one because "email" is setup @unique in prisma
         // const emailTaken = await prisma.exists.User({ email: data.email });
@@ -35,7 +35,8 @@ const Mutation = {
         
         return {
             user,
-            token: jwt.sign({ userId: user.id }, 'mysolution')
+            // expiresIn: setting up expire time
+            token: getToken(user.id)
         };
 
         // Without JWT
@@ -66,6 +67,10 @@ const Mutation = {
         
         const id = getUserId(request);
         
+        if(typeof data.password === 'string') {
+            data.password = await getHashPassword(data.password);
+        }
+
         const userExist = await prisma.exists.User({ id });
         if(!userExist) throw new Error('The does not exist.');
         
@@ -541,7 +546,7 @@ const Mutation = {
         const passwordVerified = await bcrypt.compare(password, user.password);
         if(!passwordVerified) throw new Error('Your password is wrong');
 
-        const token = jwt.sign({ userId: user.id }, 'mysolution');
+        const token = getToken(user.id);
 
         return { user, token };
      } 
