@@ -63,6 +63,7 @@ const Mutation = {
         //  return user;
 
      },
+     
      async updateUser(parent, { data }, { prisma, request }, info) {
         
         const id = getUserId(request);
